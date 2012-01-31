@@ -38,6 +38,11 @@ require(['migemoge'], function(migemoge){
 migemoge.exec("hoge");
 ```
 
+### テスト
+
+まだ全然書けてないですが,
+./run_spec.sh で走らせるかvows spec/*_spec.coffee --specで走らせられます.
+
 ## Copyright
 
 Copyright (C) 2012 Takatoshi Matsumoto
