@@ -8,6 +8,8 @@ assert (for test)
 ```
 git clone
 npm install
+# for Test
+npm install coffee-script
 ```
 
 ## 使い方
