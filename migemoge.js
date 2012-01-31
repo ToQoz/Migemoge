@@ -5,6 +5,7 @@
       name: "migemoge",
       initialize: initialize,
       // 確定していないアルファベット
+      toRegExp: toRegExp,
       unsettled: "",
       clearUnsettled: clearUnsettled,
       // 母音のアルファベットの配列
@@ -17,7 +18,6 @@
       // アルファベットを日本語の音で分ける
       separate: separate,
       // for など抜ける用
-      breaker: {},
       // 実行
       exec: exec,
       // 音で区切ったアルファベットを平仮名に変換
@@ -78,7 +78,6 @@
       for (i = 0, l = str.length; i < l; i++) {
         separatedStr = this.separate(str[i], ((l-i) === 1));
         if (separatedStr) {
-          if (separatedStr === this.breaker) return res;
           res[res.length] = separatedStr;
         }
       }
@@ -88,49 +87,71 @@
       var res = [], i, l, v;
       // 未確定の値が残っていた場合は評価に加える
       if (this.unsettled) romaAry[romaAry.length] = this.unsettled;
+
+      console.log(romaAry);
       for (i=0, l=romaAry.length; i<l; i++) {
-        str = romaAry[i];
         // "kki" などの扱いは "kk" + "ki" で「っき」としているので,
         // kakki => ["ka", "kk", "ki"] => /(か|ka)(っ|kk)(き|k)/となり, 元のkakkiでマッチしなくなるので,
         // それを避けるための処理
         if (romaAry[i].length === 2 && romaAry[i][0] === romaAry[i][1]) {
           romaAry[i] = romaAry[i] + "|" + romaAry[i][0];
         }
+
+        romaStr = romaAry[i];
         // 母音の場合
-        if (this.boin.indexOf(str[0]) !== -1) {
-          res[res.length] = this.boinTable[str[0]] + "|" + romaAry[i];
+        if (this.boin.indexOf(romaStr[0]) !== -1) {
+          // 元のローマ字と, 変換後の平仮名を結合, こんな感じroma|hira
+          res[res.length] = toRegExp(this.boinTable[romaStr[0]], romaStr);
         // 子音
         } else {
           // 2文字以上でspecialTable
-          if (str.length>=2 && str[1] in this.specialTable && str[0] in this.specialTable[str[1]]) {
-            if (str.length>=3 && str[2] in this.specialTable[str[1]][str[0]]) {
-               res[res.length] = this.specialTable[str[1]][str[0]][str[2]] + "|" + romaAry[i];
+          if (romaStr.length>=2 && romaStr[1] in this.specialTable && romaStr[0] in this.specialTable[romaStr[1]]) {
+            if (romaStr.length>=3 && romaStr[2] in this.specialTable[romaStr[1]][romaStr[0]]) {
+               res[res.length] = this.toRegExp(this.specialTable[romaStr[1]][romaStr[0]][romaStr[2]], romaStr);
             // 未確定 
             } else {
               hiraAry = [];
-              for (key in this.specialTable[str[1]][str[0]]) {
-                hiraAry[arry.length] = this.specialTable[str[1]][str[0]][key];
+              for (key in this.specialTable[romaStr[1]][romaStr[0]]) {
+                hiraAry[arry.length] = this.specialTable[romaStr[1]][romaStr[0]][key];
               }
-              // romaAryと結合したあとに こんな感じroma|hira
-              res[res.length] = hiraAry.join("|") + "|" + romaAry[i];
+              // 元のローマ字と, 変換後の平仮名を結合, こんな感じroma|hira
+              res[res.length] = this.toRegExp(hiraAry, romaStr);
             }
           } else {
-            // ラストの文字の時
-            if (str.length === 1 && ((l-i) === 1)) {
-              // 未確定
-              res[res.length] = this.shiinTable[str[0]].split("").join("|") +  "|" + romaAry[i];
+            // 1文字かつラストの文字の時
+            if (romaStr.length === 1 && ((l-i) === 1)) {
+                // 元のローマ字と, 変換後の平仮名を結合, こんな感じroma|hira
+              res[res.length] = this.toRegExp(this.shiinTable[romaStr[0]].split(""), romaStr);
             } else {
-              res[res.length] = (this.boin.indexOf(str[1]) !== -1) ? this.shiinTable[str[0]][this.boin.indexOf(str[1])] +
-                                                                     "|" + romaAry[i]: // 子音 + 母音
-                                (str[0] === str[1]) ? this.shiinTable[str[0]][this.boin.length] +
-                                                      "|" + romaAry[i]: // 子音 * 2
-                                romaAry[i];
+              res[res.length] = 
+                // 元のローマ字と, 変換後の平仮名を結合, こんな感じroma|hira
+                // 子音 + 母音
+                (this.boin.indexOf(romaStr[1]) !== -1) ? this.toRegExp(this.shiinTable[romaStr[0]][this.boin.indexOf(romaStr[1])], romaStr):
+                // 子音 * 2
+                (romaStr[0] === romaStr[1]) ? this.toRegExp(this.shiinTable[romaStr[0]][this.boin.length], romaStr):
+                romaAry[i];
             }
           }
         }
       }
       ;  
       return "(" + res.join(")(") + ")";
+    }
+
+    // オブジェクトのタイプを確かめる
+    function is(type, obj) {
+      if (type === "Number") return (obj === +obj); // こっちのほうが高速なので
+      if (type === "undefined") return (typeof obj === "undefined");
+
+      // [Object String] の'[Object ' と ']' を取り除くためにsliceしている
+      var clas = Object.prototype.toString.call(obj).slice(8, -1);
+      return obj !== null && clas === type;
+    };
+
+    function toRegExp(hiraAry, roma) {
+      var hiraStr = "";
+      if (is("Array", hiraAry)) hiraStr = hiraAry.join("|");
+      return (hiraStr) ? roma + "|" + hiraStr : roma + "|" + hiraAry;
     }
     function separate(chara, isLast) {
       var res = false,
@@ -146,7 +167,7 @@
         // 既に未確定の子音がないとき
         if (!_unsettled) {
           this.unsettled = chara;
-          return false;
+          return "";
         // 未確定の子音があるとき
         } else {
           // specialTableに存在するキー{xとおく}, y, hが渡ってきたときに
@@ -158,7 +179,7 @@
               return _unsettled + chara;
             }
             this.unsettled = _unsettled + chara;
-            return false;
+            return "";
           // specialTableが使えない
           } else {
             // 未確定の子音が渡ってきた子音と同じとき
@@ -169,10 +190,9 @@
               return _unsettled + chara;
             // 未確定の子音が渡ってきた子音と違うとき
             } else {
-              // _unsettled{n}chara{k} とか, _unsettled*2{nn}を返して, 次の_unsettledにchara{k}をいれる.
               this.unsettled = chara;
               // nが確定していない値としてセットされている場合(nk, nn)とそれ以外の場合(不正な場合)(e.g. kn, kv)
-              return (_unsettled === "n") ? (_unsettled + _unsettled) : false;
+              return (_unsettled === "n") ? (_unsettled + _unsettled) : "";
             }
           }
         }
