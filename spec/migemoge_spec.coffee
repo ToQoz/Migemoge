@@ -22,6 +22,9 @@ vows.describe("ローマ字から平仮名に変換").addBatch(
     "こっくもぐはマッチする": (res)->
       _regexp = new RegExp res, "i"
       assert.notEqual "こっくもぐ".match(_regexp), null
+    "コックモグはマッチする": (res)->
+      _regexp = new RegExp res, "i"
+      assert.notEqual "コックモグ".match(_regexp), null
     "cokkumogはマッチする": (res)->
       _regexp = new RegExp res, "i"
       assert.notEqual "cokkumog".match(_regexp), null

@@ -22,6 +22,7 @@
       exec: exec,
       // 音で区切ったアルファベットを平仮名に変換
       roma2Hira: roma2Hira,
+      hira2Kata: hira2Kata,
       shiinTable: {
         l: "ぁぃぅぇぉ", x: "ぁぃぅぇぉ",
         c: "かしくせこっ", k: "かきくけこっ", s: "さしすせそっ",
@@ -83,6 +84,16 @@
       }
       return res;
     }
+
+    function hira2Kata(hira) {
+      var i, c, a = [];
+      for(i=hira.length-1;0<=i;i--) {
+          c = hira.charCodeAt(i);
+          a[i] = (0x3041 <= c && c <= 0x3096) ? c + 0x0060 : c;
+      };
+      return String.fromCharCode.apply(null, a);
+    }
+
     function roma2Hira(romaAry) {
       var res = [], i, l, v;
       // 未確定の値が残っていた場合は評価に加える
@@ -101,7 +112,7 @@
         // 母音の場合
         if (this.boin.indexOf(romaStr[0]) !== -1) {
           // 元のローマ字と, 変換後の平仮名を結合, こんな感じroma|hira
-          res[res.length] = toRegExp(this.boinTable[romaStr[0]], romaStr);
+          res[res.length] = this.toRegExp(this.boinTable[romaStr[0]], romaStr);
         // 子音
         } else {
           // 2文字以上でspecialTable
@@ -148,10 +159,10 @@
       return obj !== null && clas === type;
     };
 
-    function toRegExp(hiraAry, roma) {
+    function toRegExp(_hira, roma) {
       var hiraStr = "";
-      if (is("Array", hiraAry)) hiraStr = hiraAry.join("|");
-      return (hiraStr) ? roma + "|" + hiraStr : roma + "|" + hiraAry;
+      hira = (is("Array", _hira)) ? _hira.join("|") : _hira;
+      return roma + "|" + hira + "|" + this.hira2Kata(hira);
     }
     function separate(chara, isLast) {
       var res = false,
