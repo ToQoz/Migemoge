@@ -1,0 +1,9 @@
+{
+    "name": "migemoge"
+  , "version": "0.0.1"
+  , "private": true
+  , "dependencies": {
+    "assert": "v0.4.9"
+    , "vows": "v0.6.1"
+  }
+}
