@@ -93,7 +93,9 @@
         // "kki" などの扱いは "kk" + "ki" で「っき」としているので,
         // kakki => ["ka", "kk", "ki"] => /(か|ka)(っ|kk)(き|k)/となり, 元のkakkiでマッチしなくなるので,
         // それを避けるための処理
-        if (romaAry[i].length === 2 && romaAry[i][0] === romaAry[i][1]) romaAry[i] = romaAry[i] + "|" + romaAry[i][0];
+        if (romaAry[i].length === 2 && romaAry[i][0] === romaAry[i][1]) {
+          romaAry[i] = romaAry[i] + "|" + romaAry[i][0];
+        }
         // 母音の場合
         if (this.boin.indexOf(str[0]) !== -1) {
           res[res.length] = this.boinTable[str[0]] + "|" + romaAry[i];
@@ -118,8 +120,10 @@
               // 未確定
               res[res.length] = this.shiinTable[str[0]].split("").join("|") +  "|" + romaAry[i];
             } else {
-              res[res.length] = (this.boin.indexOf(str[1]) !== -1) ? this.shiinTable[str[0]][this.boin.indexOf(str[1])] + "|" + romaAry[i]: // 子音 + 母音
-                                (str[0] === str[1]) ? this.shiinTable[str[0]][this.boin.length] + "|" + romaAry[i]: // 子音 * 2
+              res[res.length] = (this.boin.indexOf(str[1]) !== -1) ? this.shiinTable[str[0]][this.boin.indexOf(str[1])] +
+                                                                     "|" + romaAry[i]: // 子音 + 母音
+                                (str[0] === str[1]) ? this.shiinTable[str[0]][this.boin.length] +
+                                                      "|" + romaAry[i]: // 子音 * 2
                                 romaAry[i];
             }
           }
@@ -161,7 +165,6 @@
             if (chara === _unsettled) {
               // _unsettled{n}, chara{n}であれば, this.unsettledクリアして,            _unsettled + charaを返す.
               // それ以外, _unsettled{k}, chara{n}, this.unsettledにchara{k} を入れて, _unsettled + charaを返す.
-              // TODO unsettledが最後に残ってるときに評価する
               this.unsettled = (_unsettled === "n") ? "" : chara;
               return _unsettled + chara;
             // 未確定の子音が渡ってきた子音と違うとき
