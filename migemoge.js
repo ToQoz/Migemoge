@@ -72,8 +72,6 @@
     };
 
     var _migemoge = {
-      // モジュール名
-      name: "migemoge",
       // 正規化
       toRegExp_: toRegExp_,
       // 確定していないアルファベット
@@ -91,6 +89,9 @@
 
     // インターフェース
     var migemoge = {
+      // モジュール名
+      name: "migemoge",
+      // 実行
       exec: function(str) {
         return (function() {
           this.clearPending_();
@@ -98,6 +99,7 @@
         }).call(_migemoge, str);
       }
     };
+
     return (function() {
       var i, l;
       for (i = 0, l = table.al_boin.length; i < l; i++) {
@@ -105,6 +107,9 @@
       }
       return this;
     }).call(migemoge);
+
+
+    // 実装
 
     function clearPending_() {
       this.pending_ = "";
@@ -244,7 +249,7 @@
     module.exports = factory();
   } :
   // defineもmoduleも使えないとき現在のコンテキストに入れる
-  function(namespace, factory) {
+  function(deps, factory) {
     var module = factory();
     this[module.name] = module;
   }
