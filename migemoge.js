@@ -1,76 +1,15 @@
-// これ配列でかえさずに, ローマ字をそのまま順番にtableで絞りこんでいくと言い気がしてきた
-(function(define) {
+/*
+ * prefix: 
+ * al アルファベット
+ * bo 母音
+ * si 子音
+ * sp y, hなど子音と母音の間に入る音
+ * hi 平仮名
+ * ka カタカナ
+ */
+(function(define, table) {
+  var table = table;
   define([], function() {
-    /*
-    * prefix: 
-    * al アルファベット
-    * bo 母音
-    * si 子音
-    * sp y, hなど子音と母音の間に入る音
-    * hi 平仮名
-    * ka カタカナ
-    */
-
-    /*
-     * オブジェクトのタイプを確かめる
-     */
-    function is(type, obj) {
-      if (type === "Number") return (obj === +obj); // こっちのほうが高速なので
-      if (type === "undefined") return (typeof obj === "undefined");
-
-      // [Object String] の'[Object ' と ']' を取り除くためにsliceしている
-      var clas = Object.prototype.toString.call(obj).slice(8, -1);
-      return obj !== null && clas === type;
-    }
-
-    var table = {
-      // 母音のアルファベットの配列
-      al_boin: "aiueo".split(""),
-      // 母音の平仮名の配列
-      hi_boin: "あいうえお".split(""),
-      // 母音のアルファベットをキーとした平仮名のオブジェクト
-      boin: {},
-      // 子音のアルファベットをキーとした平仮名のオブジェクト
-      shiin: {
-        l: "ぁぃぅぇぉ", x: "ぁぃぅぇぉ",
-        c: "かしくせこっ", k: "かきくけこっ", s: "さしすせそっ",
-        t: "たちつてとっ", n: "なにぬねのん", h: "はひふへほっ",
-        m: "まみむめもっ", r: "らりるれろっ", g: "がぎぐげごっ",
-        z: "ざしずぜぞっ", d: "だぢづでどっ", b: "ばびぶべぼっ",
-        p: "ぱぴぷぺぽっ",
-        q: ["くぁ", "くぃ", "く", "くぇ", "くぉ"],
-        w: ["わ", "うぃ", "う", "うぇ", "を", "っ"],
-        j: ["じゃ", "じ", "じゅ", "じぇ", "じょ"],
-        v: ["ヴぁ", "ヴぃ", "ヴ", "ヴぇ", "ヴぉ"]
-      },
-      // 3つのアルファベットから生成される平仮名のオブジェクト
-      special: {
-        y: {
-          l: {a:"ゃ", u:"ゅ", o:"ょ"},
-          x: {a:"ゃ", u:"ゅ", o:"ょ"},
-          k: {a: "きゃ", u: "きゅ", o: "きょ"},
-          s: {a: "しゃ", u: "しゅ", o: "しょ"},
-          t: {a: "ちゃ", u: "ちゅ", o: "ちょ"},
-          c: {a: "ちゃ", u: "ちゅ", o: "ちょ"},
-          n: {a: "にゃ", u: "にゅ", o: "にょ"},
-          h: {a: "ひゃ", u: "ひゅ", o: "ひょ"},
-          n: {a: "にゃ", u: "にゅ", o: "にょ"},
-          m: {a: "みゃ", u: "みゅ", o: "みょ"},
-          r: {a: "りゃ", u: "りゅ", o: "りょ"},
-          g: {a: "ぎゃ", u: "ぎゅ", o: "ぎょ"},
-          b: {a: "びゃ", u: "びゅ", o: "びょ"}
-        },
-        h: {
-          w: {a: "うぁ", i: "うぃ", u: "う", e:"うぇ", o: "うぉ"},
-          c: {a: "ちゃ", i: "ち", u: "ちゅ", e: "ちぇ", o: "ちょ"},
-          s: {a: "しゃ", i: "し", u: "しゅ", e:"しぇ", o: "しょ"}
-        },
-        s: {
-          t: {a: "つぁ", i: "つぃ", u: "つ", e: "つぇ", o: "つぉ"}
-        }
-      }
-    };
-
     var _migemoge = {
       // 正規化
       toRegExp_: toRegExp_,
@@ -108,13 +47,10 @@
       return this;
     }).call(migemoge);
 
-
-    // 実装
-
-    function clearPending_() {
-      this.pending_ = "";
-    }
-
+    // --- 実装 ---
+    /*
+     * @memberof _migemoge
+     */
     function separateWrapper_(str) {
       var separatedAry = [],
           i, l;
@@ -127,6 +63,58 @@
       return separatedAry;
     }
 
+    /*
+     * @memberOf _migemoge
+     */
+    function separate_(chara, isLast) {
+      var res = false,
+          // 判定用なので値を変えない
+          _pending = this.pending_;
+      // 母音が渡ってきたとき
+      if (table.al_boin.indexOf(chara) !== -1) {
+        this.clearPending_();
+        return (_pending) ? _pending + chara : chara;
+      // 子音が渡ってきたとき
+      } else {
+        // 未確定の子音が3文字以上あるとき -> 一旦終了
+        // 既に未確定の子音がないとき
+        if (!_pending) {
+          this.pending_ = chara;
+          return "";
+        // 未確定の子音があるとき
+        } else {
+          // specialTableに存在するキー{xとおく}, y, hが渡ってきたときに
+          // _pending_ が specialTable[x]のキーとして存在する場合 -> specialTableが使える
+          if (chara in table.special && _pending in table.special[chara]) {
+            if (isLast) return _pending + chara;
+            if (chara === _pending) {
+              this.pending_ = (_pending === "n") ? "" : chara;
+              return _pending + chara;
+            }
+            this.pending_ = _pending + chara;
+            return "";
+          // specialTableが使えない
+          } else {
+            // 未確定の子音が渡ってきた子音と同じとき
+            if (chara === _pending) {
+              // _pending{n}, chara{n}であれば, this.pending_クリアして,            _pending + charaを返す.
+              // それ以外, _pending{k}, chara{n}, this.pending_にchara{k} を入れて, _pending + charaを返す.
+              this.pending_ = (_pending === "n") ? "" : chara;
+              return _pending + chara;
+            // 未確定の子音が渡ってきた子音と違うとき
+            } else {
+              this.pending_ = chara;
+              // nが確定していない値としてセットされている場合(nk, nn)とそれ以外の場合(不正な場合)(e.g. kn, kv)
+              return (_pending === "n") ? (_pending + _pending) : "";
+            }
+          }
+        }
+      }
+    }
+
+    /*
+     * @memberOf _migemoge
+     */
     function hira2kata_(hira) {
       var i, c, a = [];
       for(i=hira.length-1;0<=i;i--) {
@@ -136,6 +124,9 @@
       return String.fromCharCode.apply(null, a);
     }
 
+    /*
+     * @memberOf _migemoge
+     */
     function roma2hira_(romaAry) {
       var res = [], i, l, v;
       // 未確定の値が残っていた場合は評価に加える
@@ -189,59 +180,37 @@
       return "(" + res.join(")(") + ")";
     }
 
+    /*
+     * @memberOf _migemoge
+     */
+    function clearPending_() {
+      this.pending_ = "";
+    }
+
+    /*
+     * @memberOf _migemoge
+     */
     function toRegExp_(_hira, roma) {
       var hiraStr = "";
       hira = (is("Array", _hira)) ? _hira.join("|") : _hira;
       return roma + "|" + hira + "|" + this.hira2kata_(hira);
     }
 
-    function separate_(chara, isLast) {
-      var res = false,
-          // 判定用なので値を変えない
-          _pending = this.pending_;
-      // 母音が渡ってきたとき
-      if (table.al_boin.indexOf(chara) !== -1) {
-        this.clearPending_();
-        return (_pending) ? _pending + chara : chara;
-      // 子音が渡ってきたとき
-      } else {
-        // 未確定の子音が3文字以上あるとき -> 一旦終了
-        // 既に未確定の子音がないとき
-        if (!_pending) {
-          this.pending_ = chara;
-          return "";
-        // 未確定の子音があるとき
-        } else {
-          // specialTableに存在するキー{xとおく}, y, hが渡ってきたときに
-          // _pending_ が specialTable[x]のキーとして存在する場合 -> specialTableが使える
-          if (chara in table.special && _pending in table.special[chara]) {
-            if (isLast) return _pending + chara;
-            if (chara === _pending) {
-              this.pending_ = (_pending === "n") ? "" : chara;
-              return _pending + chara;
-            }
-            this.pending_ = _pending + chara;
-            return "";
-          // specialTableが使えない
-          } else {
-            // 未確定の子音が渡ってきた子音と同じとき
-            if (chara === _pending) {
-              // _pending{n}, chara{n}であれば, this.pending_クリアして,            _pending + charaを返す.
-              // それ以外, _pending{k}, chara{n}, this.pending_にchara{k} を入れて, _pending + charaを返す.
-              this.pending_ = (_pending === "n") ? "" : chara;
-              return _pending + chara;
-            // 未確定の子音が渡ってきた子音と違うとき
-            } else {
-              this.pending_ = chara;
-              // nが確定していない値としてセットされている場合(nk, nn)とそれ以外の場合(不正な場合)(e.g. kn, kv)
-              return (_pending === "n") ? (_pending + _pending) : "";
-            }
-          }
-        }
-      }
+    // --- Utility用のメソッド ---
+    /*
+     * オブジェクトのタイプを確かめる
+     */
+    function is(type, obj) {
+      if (type === "Number") return (obj === +obj); // こっちのほうが高速なので
+      if (type === "undefined") return (typeof obj === "undefined");
+
+      // [Object String] の'[Object ' と ']' を取り除くためにsliceしている
+      var clas = Object.prototype.toString.call(obj).slice(8, -1);
+      return obj !== null && clas === type;
     }
   });
 })(
+  // 第一引数 define
   // RequireJSとかでdefine使える時
   typeof define !== 'undefined' ? define :
   // RequireJSとかでdefine使えず, Nodeとかでmodule.expotsが使えるとき
@@ -252,5 +221,53 @@
   function(deps, factory) {
     var module = factory();
     this[module.name] = module;
+  },
+  // 第二引数 table コードの先頭にあると見通し悪いとおもったので
+  {
+    // 母音のアルファベットの配列
+    al_boin: "aiueo".split(""),
+    // 母音の平仮名の配列
+    hi_boin: "あいうえお".split(""),
+    // 母音のアルファベットをキーとした平仮名のオブジェクト
+    boin: {},
+    // 子音のアルファベットをキーとした平仮名のオブジェクト
+    shiin: {
+      l: "ぁぃぅぇぉ", x: "ぁぃぅぇぉ",
+      c: "かしくせこっ", k: "かきくけこっ", s: "さしすせそっ",
+      t: "たちつてとっ", n: "なにぬねのん", h: "はひふへほっ",
+      m: "まみむめもっ", r: "らりるれろっ", g: "がぎぐげごっ",
+      z: "ざしずぜぞっ", d: "だぢづでどっ", b: "ばびぶべぼっ",
+      p: "ぱぴぷぺぽっ",
+      q: ["くぁ", "くぃ", "く", "くぇ", "くぉ"],
+      w: ["わ", "うぃ", "う", "うぇ", "を", "っ"],
+      j: ["じゃ", "じ", "じゅ", "じぇ", "じょ"],
+      v: ["ヴぁ", "ヴぃ", "ヴ", "ヴぇ", "ヴぉ"]
+    },
+    // 3つのアルファベットから生成される平仮名のオブジェクト
+    special: {
+      y: {
+        l: {a:"ゃ", u:"ゅ", o:"ょ"},
+        x: {a:"ゃ", u:"ゅ", o:"ょ"},
+        k: {a: "きゃ", u: "きゅ", o: "きょ"},
+        s: {a: "しゃ", u: "しゅ", o: "しょ"},
+        t: {a: "ちゃ", u: "ちゅ", o: "ちょ"},
+        c: {a: "ちゃ", u: "ちゅ", o: "ちょ"},
+        n: {a: "にゃ", u: "にゅ", o: "にょ"},
+        h: {a: "ひゃ", u: "ひゅ", o: "ひょ"},
+        n: {a: "にゃ", u: "にゅ", o: "にょ"},
+        m: {a: "みゃ", u: "みゅ", o: "みょ"},
+        r: {a: "りゃ", u: "りゅ", o: "りょ"},
+        g: {a: "ぎゃ", u: "ぎゅ", o: "ぎょ"},
+        b: {a: "びゃ", u: "びゅ", o: "びょ"}
+      },
+      h: {
+        w: {a: "うぁ", i: "うぃ", u: "う", e:"うぇ", o: "うぉ"},
+        c: {a: "ちゃ", i: "ち", u: "ちゅ", e: "ちぇ", o: "ちょ"},
+        s: {a: "しゃ", i: "し", u: "しゅ", e:"しぇ", o: "しょ"}
+      },
+      s: {
+        t: {a: "つぁ", i: "つぃ", u: "つ", e: "つぇ", o: "つぉ"}
+      }
+    }
   }
 );
