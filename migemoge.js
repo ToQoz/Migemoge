@@ -10,7 +10,8 @@
 (function(define, table) {
   var table = table;
   define([], function() {
-    var _migemoge = {
+    // 
+    var private = {
       // 正規化
       toRegExp_: toRegExp_,
       // 確定していないアルファベット
@@ -32,15 +33,13 @@
       name: "Migemoge",
       // 実行
       exec: function(str) {
-        return (function() {
-          this.clearPending_();
-          return this.roma2hira_(this.separateWrapper_(str));
-        }).call(_migemoge, str);
+        return exec.call(private, str);
       }
     };
 
     return function() {
       return (function () {
+        // [母音]アルファベットををキーにした平仮名を持つオブジェクトを作る
         var i, l;
         for (i = 0, l = table.al_boin.length; i < l; i++) {
           table.boin[table.al_boin[i]] = table.hi_boin[i];
@@ -51,7 +50,15 @@
 
     // --- 実装 ---
     /*
-     * @memberof _migemoge
+     * @memberof private
+     */
+    function exec(str) {
+      this.clearPending_();
+      return this.roma2hira_(this.separateWrapper_(str));
+    }
+
+    /*
+     * @memberof private
      */
     function separateWrapper_(str) {
       var separatedAry = [],
@@ -66,7 +73,7 @@
     }
 
     /*
-     * @memberOf _migemoge
+     * @memberOf private
      */
     function separate_(chara, isLast) {
       var res = false,
@@ -115,7 +122,7 @@
     }
 
     /*
-     * @memberOf _migemoge
+     * @memberOf private
      */
     function hira2kata_(hira) {
       var i, c, a = [];
@@ -127,7 +134,7 @@
     }
 
     /*
-     * @memberOf _migemoge
+     * @memberOf private
      */
     function roma2hira_(romaAry) {
       var res = [], i, l, v;
@@ -183,14 +190,14 @@
     }
 
     /*
-     * @memberOf _migemoge
+     * @memberOf private
      */
     function clearPending_() {
       this.pending_ = "";
     }
 
     /*
-     * @memberOf _migemoge
+     * @memberOf private
      */
     function toRegExp_(_hira, roma) {
       var hiraStr = "";
@@ -227,9 +234,9 @@
   // 第二引数 table コードの先頭にあると見通し悪いとおもったので
   {
     // 母音のアルファベットの配列
-    al_boin: "aiueo".split(""),
+    al_boin: "aiueo",
     // 母音の平仮名の配列
-    hi_boin: "あいうえお".split(""),
+    hi_boin: "あいうえお",
     // 母音のアルファベットをキーとした平仮名のオブジェクト
     boin: {},
     // 子音のアルファベットをキーとした平仮名のオブジェクト
