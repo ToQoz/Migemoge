@@ -1,6 +1,6 @@
 vows = require "vows"
 assert = require "assert"
-migemoge = require "../migemoge"
+migemoge = require("../migemoge")()
 
 vows.describe("ローマ字から平仮名に変換").addBatch(
   "migemoっぽい正規表現をkyaakkinkuから生成したしたとき":

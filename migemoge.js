@@ -29,7 +29,7 @@
     // インターフェース
     var migemoge = {
       // モジュール名
-      name: "migemoge",
+      name: "Migemoge",
       // 実行
       exec: function(str) {
         return (function() {
@@ -39,13 +39,15 @@
       }
     };
 
-    return (function() {
-      var i, l;
-      for (i = 0, l = table.al_boin.length; i < l; i++) {
-        table.boin[table.al_boin[i]] = table.hi_boin[i];
-      }
-      return this;
-    }).call(migemoge);
+    return function() {
+      return (function () {
+        var i, l;
+        for (i = 0, l = table.al_boin.length; i < l; i++) {
+          table.boin[table.al_boin[i]] = table.hi_boin[i];
+        }
+        return this;
+      }).call(migemoge)
+    };
 
     // --- 実装 ---
     /*

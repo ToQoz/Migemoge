@@ -19,6 +19,7 @@ npm install coffee-script
 ```javascript
 require(['migemoge'], function(migemoge){
     // いけるはず, ※まだ試せていない.
+    var migemoge = Migemoge();
     migemoge.exec("hoge");
 });
 ```
@@ -26,7 +27,8 @@ require(['migemoge'], function(migemoge){
 ### CommonJS, NodeJSのようにmodule.exportをサポートしている場合.
 
 ```javascript
-    var migemoge = require("./migemoge");
+    var Migemoge = require("./migemoge");
+    var migemoge = Migemoge();
     migemoge.exec("hoge");
 ```
 
@@ -35,6 +37,7 @@ require(['migemoge'], function(migemoge){
 ```javascript
 // HTMLのscriptタグで読み込み後
 // ※この場合window.migemogeのみグローバル汚染します.
+migemoge = Migemoge();
 migemoge.exec("hoge");
 ```
 
