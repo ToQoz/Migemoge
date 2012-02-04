@@ -10,32 +10,31 @@
 (function(define, table) {
   var table = table;
   define([], function() {
-    // 
-    var private = {
-      // 正規化
-      toRegExp_: toRegExp_,
-      // 確定していないアルファベット
-      pending_: "",
-      // 確定していないアルファベットをクリアする
-      clearPending_: clearPending_,
-      separateWrapper_: separateWrapper_,
-      // アルファベットを日本語の音で分ける
-      separate_: separate_,
-      // 音で区切ったアルファベットの配列をを平仮名の文字列に変換
-      roma2hira_: roma2hira_,
-      // 平仮名をカタカナに変換
-      hira2kata_: hira2kata_
-    };
-
-    // インターフェース
-    var migemoge = {
-      // モジュール名
-      name: "Migemoge",
-      // 実行
-      exec: function(str) {
-        return exec.call(private, str);
-      }
-    };
+    var hasProp = Object.prototype.hasOwnProperty,
+        private = {
+          // 正規化
+          toRegExp_: toRegExp_,
+          // 確定していないアルファベット
+          pending_: "",
+          // 確定していないアルファベットをクリアする
+          clearPending_: clearPending_,
+          separateWrapper_: separateWrapper_,
+          // アルファベットを日本語の音で分ける
+          separate_: separate_,
+          // 音で区切ったアルファベットの配列をを平仮名の文字列に変換
+          roma2hira_: roma2hira_,
+          // 平仮名をカタカナに変換
+          hira2kata_: hira2kata_
+        },
+        // インターフェース
+        migemoge = {
+          // モジュール名
+          name: "Migemoge",
+          // 実行
+          exec: function(str) {
+            return exec.call(private, str);
+          }
+        };
 
     return function() {
       return (function () {
@@ -65,9 +64,7 @@
           i, l;
       for (i = 0, l = str.length; i < l; i++) {
         separated = this.separate_(str[i], ((l-i) === 1));
-        if (separated) {
-          separatedAry[separatedAry.length] = separated;
-        }
+        if (separated) separatedAry[separatedAry.length] = separated;
       }
       return separatedAry;
     }
@@ -75,50 +72,97 @@
     /*
      * @memberOf private
      */
-    function separate_(chara, isLast) {
+    function separate_(input, isLast) {
       var res = false,
-          // 判定用なので値を変えない
           _pending = this.pending_;
       // 母音が渡ってきたとき
-      if (table.al_boin.indexOf(chara) !== -1) {
+      if (table.al_boin.indexOf(input) !== -1) {
         this.clearPending_();
-        return (_pending) ? _pending + chara : chara;
+        return (_pending) ? _pending + input : input;
       // 子音が渡ってきたとき
       } else {
-        // 未確定の子音が3文字以上あるとき -> 一旦終了
         // 既に未確定の子音がないとき
         if (!_pending) {
-          this.pending_ = chara;
-          return "";
+          this.pending_ = input;
+          return;
         // 未確定の子音があるとき
         } else {
-          // specialTableに存在するキー{xとおく}, y, hが渡ってきたときに
-          // _pending_ が specialTable[x]のキーとして存在する場合 -> specialTableが使える
-          if (chara in table.special && _pending in table.special[chara]) {
-            if (isLast) return _pending + chara;
-            if (chara === _pending) {
-              this.pending_ = (_pending === "n") ? "" : chara;
-              return _pending + chara;
+          // specialTableが使える
+          if (hasProp.call(table.special, input) && hasProp.call(table.special[input], _pending)) {
+            if (isLast) {
+              return _pending + input;
+            } else if (input === _pending) {
+              this.pending_ = (_pending === "n") ? "" : input;
+              return _pending + input;
+            } else {
+              this.pending_ = _pending + input;
+              return;
             }
-            this.pending_ = _pending + chara;
-            return "";
           // specialTableが使えない
           } else {
-            // 未確定の子音が渡ってきた子音と同じとき
-            if (chara === _pending) {
-              // _pending{n}, chara{n}であれば, this.pending_クリアして,            _pending + charaを返す.
-              // それ以外, _pending{k}, chara{n}, this.pending_にchara{k} を入れて, _pending + charaを返す.
-              this.pending_ = (_pending === "n") ? "" : chara;
-              return _pending + chara;
-            // 未確定の子音が渡ってきた子音と違うとき
+            if (input === _pending) {
+              // _pending{n}, input{n}であれば, this.pending_クリアして, _pending + inputを返す.
+              // n以外の値xとすると, _pending{x}, input{x}, this.pending_にxを入れて, _pending + inputを返す.
+              this.pending_ = (_pending === "n") ? "" : input;
+              return _pending + input;
             } else {
-              this.pending_ = chara;
+              this.pending_ = input;
               // nが確定していない値としてセットされている場合(nk, nn)とそれ以外の場合(不正な場合)(e.g. kn, kv)
               return (_pending === "n") ? (_pending + _pending) : "";
             }
           }
         }
       }
+    }
+
+    /*
+     * @memberOf private
+     */
+    function roma2hira_(romaAry) {
+      var res = [], i, l, roma, hira;
+      // 未確定の値が残っていた場合は評価に加える
+      if (this.pending_) romaAry[romaAry.length] = this.pending_;
+
+      for (i=0, l=romaAry.length; i<l; i++) {
+        roma = romaAry[i];
+
+        if (roma.length === 1) {
+          // 母音
+          if (table.al_boin.indexOf(roma[0]) !== -1) {
+            hira = table.boin[roma[0]];
+          // ラスト未確定の子音
+          } else if ((l-i) === 1 && hasProp.call(table.shiin, roma[0])) {
+            hira = table.shiin[roma[0]].split("");
+          } else {
+            hira = "";
+          }
+        } else if (roma.length === 2) {
+          // ラスト未確定のspecialTable (e.g. ky, by)
+          if (hasProp.call(table.special, roma[1]) &&
+              hasProp.call(table.special[roma[1]], roma[0])) {
+            hiraAry = [];
+            for (key in table.special[roma[1]][roma[0]]) {
+              if (!hasProp.call(table.special[roma[1]][roma[0]], key)) continue;
+              hiraAry[arry.length] = table.special[roma[1]][roma[0]][key];
+            }
+            hira = hiraAry;
+          } else {
+            hira = (table.al_boin.indexOf(roma[1]) !== -1) ? 
+                     table.shiin[roma[0]][table.al_boin.indexOf(roma[1])] :
+                   (roma[0] === roma[1]) ? 
+                     table.shiin[roma[0]][table.al_boin.length] :
+                   "";
+          }
+        } else if (roma.length === 3) {
+          hira = hasProp.call(table.special[roma[1]][roma[0]], roma[2]) ?
+                   table.special[roma[1]][roma[0]][roma[2]] :
+                 ""
+        } else {
+          hira = "";
+        }
+        res[res.length] = this.toRegExp_(hira, roma);
+      }
+      return "(" + res.join(")(") + ")";
     }
 
     /*
@@ -136,62 +180,6 @@
     /*
      * @memberOf private
      */
-    function roma2hira_(romaAry) {
-      var res = [], i, l, v;
-      // 未確定の値が残っていた場合は評価に加える
-      if (this.pending_) romaAry[romaAry.length] = this.pending_;
-
-      for (i=0, l=romaAry.length; i<l; i++) {
-        // "kki" などの扱いは "kk" + "ki" で「っき」としているので,
-        // kakki => ["ka", "kk", "ki"] => /(か|ka)(っ|kk)(き|k)/となり, 元のkakkiでマッチしなくなるので,
-        // それを避けるための処理
-        if (romaAry[i].length === 2 && romaAry[i][0] === romaAry[i][1]) {
-          romaAry[i] = romaAry[i] + "|" + romaAry[i][0];
-        }
-
-        roma = romaAry[i];
-        // 母音の場合
-        if (table.al_boin.indexOf(roma[0]) !== -1) {
-          // 元のローマ字と, 変換後の平仮名を結合, こんな感じroma|hira
-          res[res.length] = this.toRegExp_(table.boin[roma[0]], roma);
-        // 子音
-        } else {
-          // 2文字以上でspecialTable
-          if (roma.length>=2 && roma[1] in table.special && roma[0] in table.special[roma[1]]) {
-            if (roma.length>=3 && roma[2] in table.special[roma[1]][roma[0]]) {
-               res[res.length] = this.toRegExp_(table.special[roma[1]][roma[0]][roma[2]], roma);
-            // 未確定 
-            } else {
-              hiraAry = [];
-              for (key in table.special[roma[1]][roma[0]]) {
-                hiraAry[arry.length] = table.special[roma[1]][roma[0]][key];
-              }
-              // 元のローマ字と, 変換後の平仮名を結合, こんな感じroma|hira
-              res[res.length] = this.toRegExp_(hiraAry, roma);
-            }
-          } else {
-            // 1文字かつラストの文字の時
-            if (roma.length === 1 && ((l-i) === 1)) {
-                // 元のローマ字と, 変換後の平仮名を結合, こんな感じroma|hira
-              res[res.length] = this.toRegExp_(table.shiin[roma[0]].split(""), roma);
-            } else {
-              res[res.length] = 
-                // 元のローマ字と, 変換後の平仮名を結合, こんな感じroma|hira
-                // 子音 + 母音
-                (table.al_boin.indexOf(roma[1]) !== -1) ? this.toRegExp_(table.shiin[roma[0]][table.al_boin.indexOf(roma[1])], roma):
-                // 子音 * 2
-                (roma[0] === roma[1]) ? this.toRegExp_(table.shiin[roma[0]][table.al_boin.length], roma):
-                                        roma;
-            }
-          }
-        }
-      }
-      return "(" + res.join(")(") + ")";
-    }
-
-    /*
-     * @memberOf private
-     */
     function clearPending_() {
       this.pending_ = "";
     }
@@ -200,7 +188,10 @@
      * @memberOf private
      */
     function toRegExp_(_hira, roma) {
-      var hiraStr = "";
+      var hira = "";
+      // 平仮名変換時にkki = > ['kk', 'ki'] として扱っているが,
+      // 元のローマ字 kkiにもマッチさせるため
+      if (roma.length === 2 && roma[0] === roma[1]) roma += "|" + roma[0];
       hira = (is("Array", _hira)) ? _hira.join("|") : _hira;
       return roma + "|" + hira + "|" + this.hira2kata_(hira);
     }
