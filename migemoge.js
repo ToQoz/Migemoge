@@ -11,7 +11,7 @@
   var table = table;
   define([], function() {
     var hasProp = Object.prototype.hasOwnProperty,
-        private = {
+        _migemoge = {
           // 正規化
           toRegExp_: toRegExp_,
           // 確定していないアルファベット
@@ -32,7 +32,7 @@
           name: "Migemoge",
           // 実行
           exec: function(str) {
-            return exec.call(private, str);
+            return exec.call(_migemoge, str);
           }
         };
 
@@ -49,7 +49,7 @@
 
     // --- 実装 ---
     /*
-     * @memberof private
+     * @memberof _migemoge
      */
     function exec(str) {
       this.clearPending_();
@@ -57,7 +57,7 @@
     }
 
     /*
-     * @memberof private
+     * @memberof _migemoge
      */
     function separateWrapper_(str) {
       var separatedAry = [],
@@ -70,7 +70,7 @@
     }
 
     /*
-     * @memberOf private
+     * @memberOf _migemoge
      */
     function separate_(input, isLast) {
       var res = false,
@@ -116,7 +116,7 @@
     }
 
     /*
-     * @memberOf private
+     * @memberOf _migemoge
      */
     function roma2hira_(romaAry) {
       var res = [], i, l, roma, hira;
@@ -166,7 +166,7 @@
     }
 
     /*
-     * @memberOf private
+     * @memberOf _migemoge
      */
     function hira2kata_(hira) {
       var i, c, a = [];
@@ -178,14 +178,14 @@
     }
 
     /*
-     * @memberOf private
+     * @memberOf _migemoge
      */
     function clearPending_() {
       this.pending_ = "";
     }
 
     /*
-     * @memberOf private
+     * @memberOf _migemoge
      */
     function toRegExp_(_hira, roma) {
       var hira = "";
