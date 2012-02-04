@@ -44,7 +44,7 @@ migemoge.exec("hoge");
 ### テスト
 
 まだ全然書けてないですが,
-./run_spec.sh で走らせるかvows spec/*_spec.coffee --specで走らせられます.
+vows spec/*_spec.coffee --specで走らせられます.
 
 ## Copyright
 
