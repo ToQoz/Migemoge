@@ -11,6 +11,7 @@
   var table = table;
   define([], function() {
     var hasProp = Object.prototype.hasOwnProperty,
+        slice =Array.prototype.slice, 
         _migemoge = {
           // 正規化
           toRegExp_: toRegExp_,
@@ -31,8 +32,8 @@
           // モジュール名
           name: "Migemoge",
           // 実行
-          exec: function(str) {
-            return exec.call(_migemoge, str);
+          exec: function() {
+            return exec.apply(_migemoge, slice.call(arguments));
           }
         };
 
@@ -49,7 +50,7 @@
 
     // --- 実装 ---
     /*
-     * @memberof _migemoge
+     * @memberof migemoge
      */
     function exec(str) {
       this.clearPending_();
